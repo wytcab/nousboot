@@ -1,0 +1,56 @@
+{
+  "name": "@wytcab/nousboot",
+  "version": "0.0.1",
+  "description": "Pre-flight briefings for agentic coding sessions. Stop opening cold sessions with your agents.",
+  "license": "MIT",
+  "author": "Vilhelm Drosjer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wytcab/nousboot.git"
+  },
+  "homepage": "https://github.com/wytcab/nousboot#readme",
+  "bugs": {
+    "url": "https://github.com/wytcab/nousboot/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests in Phase 0; typecheck is the gate. Run 'pnpm typecheck'.\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@wytcab/projection-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "agent-tooling",
+    "claude-code",
+    "mcp",
+    "paperclip",
+    "briefing",
+    "cognitive-primitives"
+  ]
+}
