@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # The repo's package.json declares "@wytcab/projection-core": "workspace:*"
+      # because local development uses a pnpm workspace. CI runs from a
+      # standalone clone, so pnpm cannot resolve `workspace:*`. Rewrite to
+      # `latest` for the CI install step only — this is not committed.
+      - name: Rewrite workspace dep to latest
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            if (pkg.dependencies && pkg.dependencies['@wytcab/projection-core'] === 'workspace:*') {
+              pkg.dependencies['@wytcab/projection-core'] = 'latest';
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+              console.log('rewrote @wytcab/projection-core: workspace:* -> latest');
+            } else {
+              console.log('no workspace:* rewrite needed');
+            }
+          "
+
+      - name: Install
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test

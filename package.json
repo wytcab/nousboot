@@ -1,6 +1,6 @@
 {
   "name": "@wytcab/nousboot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pre-flight briefings for agentic coding sessions. Stop opening cold sessions with your agents.",
   "license": "MIT",
   "author": "Vilhelm Drosjer",
@@ -16,7 +16,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "nousboot": "./dist/cli.js"
+    "nousboot": "./dist/cli.js",
+    "nousboot-mcp": "./dist/mcp.js"
   },
   "exports": {
     ".": {
@@ -31,14 +32,16 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && chmod +x dist/cli.js",
+    "build": "tsc && chmod +x dist/cli.js dist/mcp.js",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
-    "test": "node --test --import tsx tests/lens.test.ts",
+    "test": "node --test --import tsx tests/lens.test.ts tests/mcp.test.ts",
     "clean": "rm -rf dist",
     "start": "node dist/cli.js"
   },
   "dependencies": {
-    "@wytcab/projection-core": "workspace:*"
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@wytcab/projection-core": "workspace:*",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -54,6 +57,8 @@
   "keywords": [
     "agent-tooling",
     "claude-code",
+    "claude-desktop",
+    "cursor",
     "mcp",
     "paperclip",
     "briefing",
