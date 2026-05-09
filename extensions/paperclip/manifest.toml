@@ -1,0 +1,56 @@
+# Paperclip extension manifest for NousBoot
+#
+# Registers nousboot as a pre-task hook that runs before any agent ticket
+# execution, surfacing a four-section briefing into the agent's context.
+#
+# NOTE: this manifest is written from the spec described in the Coxswain
+# handoff doc. The exact field set may need to be validated against the
+# current Paperclip extension schema. If Paperclip rejects it, the fields
+# below should be straightforward to adjust without changing the underlying
+# extension behavior.
+
+[extension]
+name = "nousboot"
+version = "0.2.2"
+description = "Pre-flight briefings for agentic coding sessions. Reads CLAUDE.md, README.md, and recent git log; produces a four-section briefing about session context drift."
+author = "Vilhelm Drosjer"
+license = "MIT"
+homepage = "https://github.com/wytcab/nousboot"
+repository = "https://github.com/wytcab/nousboot"
+
+[extension.requirements]
+# Paperclip will reject the extension if the host environment doesn't meet these.
+node = ">=20"
+# nousboot-mcp is the binary shipped by `npm install -g @wytcab/nousboot`.
+# Paperclip should locate it on PATH (preferred) or via npx fallback.
+binaries = ["nousboot-mcp"]
+
+[extension.environment]
+# Required environment variables for the extension to function.
+# Paperclip surfaces these in the per-brand .env or per-instance secrets.
+required = ["DEEPSEEK_API_KEY"]
+optional = ["ANTHROPIC_API_KEY"]
+
+[hook.pre_task]
+# Pre-task hook: runs before any agent ticket execution.
+# Surfaces a briefing into the agent's working context, dramatically
+# reducing the "cold session" failure mode for autonomous tickets.
+type = "mcp_tool"
+tool = "nousboot_briefing"
+# Paperclip provides the project_path of the current ticket as $PAPERCLIP_PROJECT_PATH.
+# The hook resolves this to the projectPath argument.
+arguments = { projectPath = "$PAPERCLIP_PROJECT_PATH" }
+# If the briefing fails, the agent should still proceed with the ticket.
+# A failed briefing is not a fatal error.
+on_failure = "warn_and_continue"
+# Briefings are cheap (~$0.0004) but cumulative cost matters for autonomous loops.
+# Cap at one briefing per agent per project per 6 hours.
+cache_ttl_seconds = 21600
+cache_key = "$PAPERCLIP_AGENT_ID:$PAPERCLIP_PROJECT_PATH"
+
+[install]
+# How Paperclip should install the extension if not already present.
+# Recommended: install once globally; npx fallback supports zero-install runs.
+preferred = "npm-global"
+npm_global = "@wytcab/nousboot@^0.2.2"
+npx_fallback = "@wytcab/nousboot@^0.2.2"

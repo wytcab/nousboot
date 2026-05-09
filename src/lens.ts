@@ -29,7 +29,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const VERSION = "0.2.1";
+export const VERSION = "0.2.2";
 
 /** Path to a prompt template, resolved relative to this module's location. */
 function promptPath(name: string): string {

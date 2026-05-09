@@ -1,0 +1,74 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+
+      # Rewrite workspace:* to the latest published version of projection-core.
+      # `pnpm publish` from inside a workspace would do this automatically,
+      # but CI checks out a standalone repo where pnpm doesn't see the
+      # workspace, so we rewrite manually before install/build/publish.
+      - name: Rewrite workspace dep to latest published projection-core
+        run: |
+          PROJECTION_CORE_VERSION=$(npm view @wytcab/projection-core version)
+          echo "Latest @wytcab/projection-core on npm: $PROJECTION_CORE_VERSION"
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            if (pkg.dependencies && pkg.dependencies['@wytcab/projection-core'] === 'workspace:*') {
+              pkg.dependencies['@wytcab/projection-core'] = '^$PROJECTION_CORE_VERSION';
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+              console.log('rewrote @wytcab/projection-core: workspace:* -> ^$PROJECTION_CORE_VERSION');
+            }
+          "
+
+      - name: Install
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Verify package version matches tag
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "ERROR: package.json version ($PKG_VERSION) does not match git tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "version match: $PKG_VERSION"
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Publish
+        run: pnpm publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
