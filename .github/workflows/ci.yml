@@ -25,7 +25,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
 
       # The repo's package.json declares "@wytcab/projection-core": "workspace:*"
       # because local development uses a pnpm workspace. CI runs from a

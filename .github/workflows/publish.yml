@@ -28,7 +28,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
           registry-url: "https://registry.npmjs.org"
 
       # Rewrite workspace:* to the latest published version of projection-core.
