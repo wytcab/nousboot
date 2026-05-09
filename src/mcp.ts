@@ -35,6 +35,9 @@
  * MIT License.
  */
 
+import fs from "node:fs";
+import { pathToFileURL } from "node:url";
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -100,8 +103,6 @@ export function buildServer(): McpServer {
           model: resolvedModel,
         });
 
-        // Stamp metadata at the bottom of the briefing so callers can see
-        // what they paid for. Matches what the CLI logs to stderr.
         const meta = result.meta;
         const footer = [
           "",
@@ -120,9 +121,6 @@ export function buildServer(): McpServer {
           ],
         };
       } catch (err) {
-        // Convert known error types into structured tool errors so the
-        // calling LLM can react sensibly (offer to fix the project path,
-        // ask the user for an API key, etc.).
         if (err instanceof LensValidationError) {
           return {
             isError: true,
@@ -158,8 +156,6 @@ async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  // Graceful shutdown on SIGINT/SIGTERM. The SDK closes the transport;
-  // any in-flight tool handler is terminated when the process exits.
   for (const sig of ["SIGINT", "SIGTERM"] as const) {
     process.on(sig, () => {
       server.close().finally(() => process.exit(0));
@@ -167,19 +163,32 @@ async function main(): Promise<void> {
   }
 }
 
-// Only run main() when this file is the entry point. When imported as a
-// module (e.g. by tests), the import should return without starting a server.
-// The check compares import.meta.url to the URL of the script Node was
-// invoked with; equal means this file was invoked directly.
-import { pathToFileURL } from "node:url";
-const isEntryPoint =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
+/**
+ * Determine whether this module is the entry point of the Node process.
+ *
+ * The naive check `import.meta.url === pathToFileURL(process.argv[1]).href`
+ * fails when the binary is invoked via an npm-created symlink in
+ * `node_modules/.bin/`: process.argv[1] is the symlink path, while
+ * import.meta.url has been resolved through the symlink to the real file.
+ * The two URLs differ, main() never runs, and the server silently no-ops.
+ *
+ * Resolve the argv path with fs.realpathSync before comparing so symlink
+ * and direct invocations both work.
+ */
+function isEntryPoint(): boolean {
+  const argv1 = process.argv[1];
+  if (argv1 === undefined) return false;
+  let realArgv1: string;
+  try {
+    realArgv1 = fs.realpathSync(argv1);
+  } catch {
+    realArgv1 = argv1;
+  }
+  return import.meta.url === pathToFileURL(realArgv1).href;
+}
 
-if (isEntryPoint) {
+if (isEntryPoint()) {
   main().catch((err: unknown) => {
-    // stderr is the only channel we can use without polluting the JSON-RPC
-    // stream on stdout. MCP clients surface stderr in their server logs.
     const message = err instanceof Error ? err.message : String(err);
     process.stderr.write(`nousboot-mcp fatal: ${message}\n`);
     process.exit(1);
