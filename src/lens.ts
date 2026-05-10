@@ -14,6 +14,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 import {
   type Corpus,
@@ -29,7 +30,14 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const VERSION = "0.2.2";
+/**
+ * Single source of truth: read this package's own version from package.json
+ * at module load. Avoids the hardcode-drift bug where lens.ts says one
+ * version while package.json has been bumped to another.
+ */
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json") as { version: string };
+export const VERSION: string = pkg.version;
 
 /** Path to a prompt template, resolved relative to this module's location. */
 function promptPath(name: string): string {
