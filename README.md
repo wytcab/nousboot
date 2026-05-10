@@ -195,7 +195,18 @@ This is a hard rule. Pull requests adding telemetry of any form will be closed w
 
 ## Built on
 
-NousBoot is built on [`@wytcab/projection-core`](https://github.com/wytcab/projection-core), the framework primitive for cognitive-primitive lenses. If you want to build your own lens — a different transformation over a corpus you already have — start there.
+NousBoot is built on [`@wytcab/projection-core`](https://github.com/wytcab/projection-core), the framework primitive for cognitive-primitive lenses. Other lenses share the same framework instead of reinventing the plumbing.
+
+## Sister lenses
+
+[`@wytcab/deballast`](https://github.com/wytcab/deballast) is a spec-compression lens. It reads a spec, compresses it to its load-bearing propositions, reconstructs the spec from those propositions only, and diffs the reconstruction against the original to classify every claim as load-bearing, decorative, or accidentally lost. Use it on PRDs, design docs, READMEs, or marketing pages before you publish or commit to building against them.
+
+```sh
+npm install -g @wytcab/deballast
+deballast spec.md
+```
+
+If you want to build your own lens — a different transformation over a corpus you already have — start with projection-core.
 
 ## Status
 
